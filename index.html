@@ -152,6 +152,20 @@
       document.querySelectorAll('.lang-btn').forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
     }
+    (function(){
+      var form = document.getElementById('regForm');
+      var waNumber = '12175983172';
+      function greeting(lang){
+        if(lang === 'punjabi') return 'سلام! کسان پکار واٹس ایپ تے خوش آمدید۔ اپنا سوال بھیجو۔';
+        return 'السلام علیکم! کسان پکار واٹس ایپ پر خوش آمدید۔ براہ کرم اپنا سوال بھیجیں۔';
+      }
+      form.addEventListener('submit', function(){
+        var lang = document.getElementById('selectedLang').value;
+        var msg = greeting(lang);
+        var url = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(msg);
+        window.open(url, '_blank');
+      });
+    })();
   </script>
 </body>
 </html>
