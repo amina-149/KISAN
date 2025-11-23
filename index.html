@@ -183,6 +183,8 @@
       document.getElementById('selectedLang').value = lang;
       document.querySelectorAll('.lang-btn').forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
+      var s = document.querySelector('.lang-btns');
+      if(s) s.style.display = 'none';
     }
     (function(){
       var form = document.getElementById('regForm');
