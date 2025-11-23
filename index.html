@@ -119,7 +119,7 @@
     .chip { background: #fff; border: 1px solid #cfd8d3; color: #0d4d26; border-radius: 14px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
   </style>
 </head>
-<body>
+<body data-chat-url="https://aminariaz.app.n8n.cloud/webhook/kp-chat">
   <div class="container">
     <div class="logo-box">
       <img src="./ChatGPT Image Nov 6, 2025, 11_41_36 PM.png" class="kp-logo" alt="Kisan Pukar Logo">
@@ -192,6 +192,8 @@
       var chatSend = document.getElementById('chatSend');
       var chatMic = document.getElementById('chatMic');
       var webhook = form.getAttribute('action');
+      var chatUrl = document.body.getAttribute('data-chat-url') || '';
+      var userProfile = {};
       function greet(lang){
         if(lang === 'punjabi') return 'سلام! میں کسان پکار چیٹ بوٹ ہاں۔ تہاڈے سوالاں دا جواب دے ساں۔';
         return 'السلام علیکم! میں کسان پکار چیٹ بوٹ ہوں۔ آپ کے سوالات کا جواب دوں گا۔';
@@ -220,7 +222,15 @@
         addMsg(text,'user');
         typing(true);
         var lang = document.getElementById('selectedLang').value;
-        setTimeout(function(){ typing(false); addMsg(localReply(text,lang),'bot'); }, 700);
+        if(chatUrl){
+          fetch(chatUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text,lang:lang,profile:userProfile})})
+            .then(function(r){ return r.text(); })
+            .then(function(t){ try{ var j=JSON.parse(t); return j.reply||j.text||t; }catch(e){ return t; } })
+            .then(function(ans){ typing(false); addMsg(ans || localReply(text,lang),'bot'); })
+            .catch(function(){ typing(false); addMsg(localReply(text,lang),'bot'); });
+        } else {
+          setTimeout(function(){ typing(false); addMsg(localReply(text,lang),'bot'); }, 700);
+        }
       }
       function localReply(q, lang){
         var l = (lang==='punjabi')?'punjabi':'urdu';
@@ -232,13 +242,20 @@
       }
       form.addEventListener('submit', function(e){
         e.preventDefault();
-        var fd = new URLSearchParams(new FormData(form));
+        var formData = new FormData(form);
+        var fd = new URLSearchParams(formData);
         fetch(webhook,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:fd.toString()}).finally(function(){
           form.style.display='none';
           chatRoot.style.display='block';
           var lang = document.getElementById('selectedLang').value;
           addMsg(greet(lang),'bot');
           renderChips(lang);
+          userProfile = {
+            name: formData.get('name') || '',
+            phone: formData.get('phone') || '',
+            region: formData.get('region') || '',
+            language: lang
+          };
         });
       });
       chatSend.addEventListener('click', function(){
