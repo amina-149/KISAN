@@ -267,64 +267,30 @@
         handleUser(txt);
       });
       chatText.addEventListener('keydown', function(ev){ if(ev.key==='Enter'){ chatSend.click(); } });
-      var useServerSTT = !!(navigator.mediaDevices && window.MediaRecorder) && !!chatUrl;
-      if(useServerSTT){
-        var mediaRec = null, recStream = null, chunks = [];
-        var recording = false;
-        chatMic.addEventListener('click', async function(){
-          if(!recording){
-            try{
-              recStream = await navigator.mediaDevices.getUserMedia({audio:true});
-              mediaRec = new MediaRecorder(recStream);
-              chunks = [];
-              mediaRec.ondataavailable = function(e){ if(e.data && e.data.size){ chunks.push(e.data); } };
-              mediaRec.onstop = function(){
-                var blob = new Blob(chunks, {type:'audio/webm'});
-                var fd = new FormData();
-                var lang = document.getElementById('selectedLang').value;
-                fd.append('file', blob, 'voice.webm');
-                fd.append('lang', lang);
-                fd.append('profile', JSON.stringify(userProfile));
-                typing(true);
-                fetch(chatUrl + '?type=audio', { method:'POST', body: fd })
-                  .then(function(r){ return r.text(); })
-                  .then(function(t){ try{ var j=JSON.parse(t); return j.reply||j.text||t; }catch(e){ return t; } })
-                  .then(function(ans){ typing(false); addMsg(ans,'bot'); })
-                  .catch(function(){ typing(false); addMsg('آواز سمجھ نہ آ سکی، براہ کرم متن میں لکھیں۔','bot'); });
-              };
-              mediaRec.start();
-              recording = true;
-              chatMic.textContent = '■';
-            }catch(err){ typing(false); }
-          } else {
-            mediaRec.stop();
-            recStream.getTracks().forEach(function(t){ t.stop(); });
-            recording = false;
-            chatMic.textContent = '🎤';
-          }
-        });
-      } else {
-        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if(!SR){ chatMic.disabled = true; }
-        else {
-          var rec = new SR();
-          rec.interimResults = false;
-          rec.maxAlternatives = 1;
-          function recLang(){ var v=document.getElementById('selectedLang').value; return v==='punjabi'?'ur-PK':'ur-PK'; }
-          chatMic.addEventListener('click', function(){
-            try{
-              rec.lang = recLang();
-              typing(true);
-              rec.start();
-            }catch(e){ typing(false); }
-          });
-          rec.addEventListener('result', function(e){
-            typing(false);
-            var t = e.results[0][0].transcript;
-            if(t){ handleUser(t); }
-          });
-          rec.addEventListener('error', function(){ typing(false); });
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SR){ chatMic.disabled = true; }
+      else {
+        var rec = new SR();
+        rec.interimResults = false;
+        rec.maxAlternatives = 1;
+        function recLang(){
+          var v = document.getElementById('selectedLang').value;
+          // Punjabi is captured in Shahmukhi using Urdu locale for better accuracy
+          return 'ur-PK';
         }
+        chatMic.addEventListener('click', function(){
+          try{
+            rec.lang = recLang();
+            typing(true);
+            rec.start();
+          }catch(e){ typing(false); }
+        });
+        rec.addEventListener('result', function(e){
+          typing(false);
+          var t = e.results[0][0].transcript;
+          if(t){ handleUser(t); }
+        });
+        rec.addEventListener('error', function(){ typing(false); });
       }
     })();
   </script>
